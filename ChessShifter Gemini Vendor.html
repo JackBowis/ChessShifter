@@ -1,0 +1,1470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChessShifter</title>
+    <style>
+        :root {
+            --bg-main: #1a1a24;
+            --bg-panel: #262636;
+            --bg-panel-border: #38384f;
+            --text-main: #f0f0f5;
+            --text-muted: #a0a0b8;
+            --accent-blue: #3a86ff;
+            --accent-green: #38b000;
+            --accent-red: #ff1744;
+            --accent-purple: #d500f9;
+            --light-square: #eeeed2;
+            --dark-square: #769656;
+            --highlight-move: rgba(58, 134, 255, 0.6);
+            --highlight-check: rgba(255, 23, 68, 0.6);
+            --highlight-selected: rgba(255, 255, 0, 0.5);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        header {
+            width: 100%;
+            max-width: 1200px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 25px;
+            background-color: var(--bg-panel);
+            border-radius: 10px;
+            border: 1px solid var(--bg-panel-border);
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 800;
+            background: linear-gradient(45deg, #3a86ff, #8338ec, #ff006e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 2px 10px rgba(131, 56, 236, 0.3);
+        }
+
+        .status-bar {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            font-size: 16px;
+        }
+
+        .status-item {
+            background: rgba(0,0,0,0.2);
+            padding: 8px 15px;
+            border-radius: 6px;
+            border: 1px solid var(--bg-panel-border);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-badge {
+            font-weight: bold;
+            color: #fff;
+            padding: 2px 8px;
+            border-radius: 4px;
+            background: var(--accent-blue);
+        }
+
+        .shield-badge {
+            background: var(--accent-red);
+        }
+
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 46px;
+            height: 24px;
+            background-color: #444;
+            border-radius: 12px;
+            transition: 0.3s;
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background-color: white;
+            top: 3px;
+            left: 3px;
+            transition: 0.3s;
+        }
+
+        input[type="checkbox"]:checked + .toggle-switch {
+            background-color: var(--accent-red);
+        }
+
+        input[type="checkbox"]:checked + .toggle-switch::after {
+            transform: translateX(22px);
+        }
+
+        input[type="checkbox"] {
+            display: none;
+        }
+
+        main {
+            display: flex;
+            gap: 30px;
+            width: 100%;
+            max-width: 1200px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .board-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: var(--bg-panel);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--bg-panel-border);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+        }
+
+        .board-wrapper {
+            position: relative;
+            display: grid;
+            grid-template-columns: 30px 480px;
+            grid-template-rows: 480px 30px;
+        }
+
+        .rank-labels {
+            display: grid;
+            grid-template-rows: repeat(8, 60px);
+            align-items: center;
+            justify-items: center;
+            font-weight: bold;
+            color: var(--text-muted);
+        }
+
+        .file-labels {
+            grid-column: 2;
+            display: grid;
+            grid-template-columns: repeat(8, 60px);
+            align-items: center;
+            justify-items: center;
+            font-weight: bold;
+            color: var(--text-muted);
+        }
+
+        .board {
+            width: 480px;
+            height: 480px;
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            grid-template-rows: repeat(8, 1fr);
+            border: 3px solid #333;
+            border-radius: 4px;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        .tile {
+            width: 60px;
+            height: 60px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 26px;
+            font-weight: 900;
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+
+        .tile.light { background-color: var(--light-square); }
+        .tile.dark { background-color: var(--dark-square); }
+
+        .tile:hover {
+            filter: brightness(1.1);
+        }
+
+        .tile.valid-move::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background-color: var(--highlight-move);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .tile.valid-move.has-piece::after {
+            width: 50px;
+            height: 50px;
+            background-color: transparent;
+            border: 5px solid var(--highlight-move);
+            border-radius: 50%;
+        }
+
+        .tile.in-check {
+            background-color: var(--highlight-check) !important;
+        }
+
+        .tile.valid-move.in-check::after {
+            background-color: var(--accent-red);
+            border-color: var(--accent-red);
+        }
+
+        /* Piece & Powerup Styling */
+        .piece-player {
+            color: #ffffff;
+            text-shadow: 0 0 8px #000, 0 0 12px var(--accent-blue), 2px 2px 4px #000;
+            z-index: 2;
+            transform: scale(1.1);
+        }
+
+        .piece-enemy {
+            color: #111111;
+            text-shadow: 0 0 5px rgba(255,255,255,0.7);
+            z-index: 2;
+        }
+
+        .piece-purple {
+            color: var(--accent-purple) !important;
+            text-shadow: 0 0 6px #fff, 1px 1px 2px #000 !important;
+            z-index: 2;
+        }
+
+        .powerup {
+            color: var(--accent-red);
+            font-weight: 900;
+            text-shadow: 0 0 4px #fff, 1px 1px 2px #000;
+            z-index: 1;
+        }
+
+        .tile-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+            pointer-events: none;
+        }
+
+        .sidebar {
+            flex: 1;
+            min-width: 340px;
+            max-width: 500px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--bg-panel-border);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid var(--bg-panel-border);
+            margin-bottom: 15px;
+            gap: 5px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            padding: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+            border-radius: 6px 6px 0 0;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-main);
+            background: rgba(255,255,255,0.05);
+        }
+
+        .tab-btn.active {
+            color: var(--accent-blue);
+            border-bottom: 2px solid var(--accent-blue);
+            margin-bottom: -2px;
+            background: rgba(58, 134, 255, 0.1);
+        }
+
+        .tab-content {
+            display: none;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .tab-content.active {
+            display: flex;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        label {
+            font-size: 14px;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        input, select, textarea {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--bg-panel-border);
+            color: var(--text-main);
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--accent-blue);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 120px;
+            font-family: monospace;
+            font-size: 13px;
+        }
+
+        .btn {
+            background: var(--accent-blue);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            font-size: 15px;
+        }
+
+        .btn:hover {
+            filter: brightness(1.15);
+            transform: translateY(-1px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-green { background: var(--accent-green); }
+        .btn-red { background: var(--accent-red); }
+        .btn-purple { background: var(--accent-purple); }
+
+        .btn-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-row .btn { flex: 1; }
+
+        .manual-tools {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            max-height: 180px;
+            overflow-y: auto;
+            padding: 5px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 6px;
+        }
+
+        .tool-btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--bg-panel-border);
+            color: var(--text-main);
+            padding: 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .tool-btn:hover { background: rgba(255,255,255,0.1); }
+        .tool-btn.active {
+            border-color: var(--accent-blue);
+            background: rgba(58, 134, 255, 0.2);
+        }
+
+        .log-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            max-height: 300px;
+        }
+
+        .log-list {
+            flex: 1;
+            overflow-y: auto;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--bg-panel-border);
+            border-radius: 6px;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .log-entry {
+            display: flex;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        .log-entry:nth-child(even) {
+            background: rgba(255,255,255,0.03);
+        }
+
+        .log-num {
+            color: var(--text-muted);
+            width: 40px;
+            user-select: none;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal {
+            background: var(--bg-panel);
+            border: 2px solid var(--bg-panel-border);
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 450px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+            transform: scale(0.9);
+            transition: transform 0.2s;
+        }
+
+        .modal-overlay.active .modal {
+            transform: scale(1);
+        }
+
+        .modal h2 {
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+
+        .modal p {
+            color: var(--text-muted);
+            margin-bottom: 25px;
+            line-height: 1.5;
+        }
+
+        .modal-options {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .modal-btn {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid var(--bg-panel-border);
+            color: var(--text-main);
+            padding: 15px 10px;
+            border-radius: 8px;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .modal-btn:hover {
+            background: var(--accent-blue);
+            border-color: var(--accent-blue);
+        }
+
+        .victory-text { color: var(--accent-green); }
+        .defeat-text { color: var(--accent-red); }
+
+        .hint-box {
+            font-size: 13px;
+            color: var(--text-muted);
+            background: rgba(0,0,0,0.2);
+            padding: 8px 12px;
+            border-radius: 6px;
+            border-left: 3px solid var(--accent-blue);
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>ChessShifter</h1>
+        <div class="status-bar">
+            <div class="status-item">
+                <span>Form:</span>
+                <span id="stat-form" class="status-badge">R</span>
+            </div>
+            <div class="status-item">
+                <span>Moves:</span>
+                <span id="stat-moves" class="status-badge">0</span>
+            </div>
+            <div class="status-item">
+                <span>Shields:</span>
+                <span id="stat-shields" class="status-badge shield-badge">@ 0</span>
+            </div>
+            <label class="toggle-container">
+                <input type="checkbox" id="toggle-check" checked>
+                <div class="toggle-switch"></div>
+                <span>Show Check Highlights</span>
+            </label>
+        </div>
+    </header>
+
+    <main>
+        <div class="board-container">
+            <div class="board-wrapper">
+                <div class="rank-labels" id="rank-labels"></div>
+                <div class="file-labels" id="file-labels"></div>
+                <div class="board" id="board"></div>
+            </div>
+            <div class="hint-box" id="board-msg" style="margin-top: 15px; width: 100%; text-align: center;">
+                Click on highlighted squares to move. Reach and take the Black King (K) in as few moves as possible!
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <div class="panel">
+                <div class="tabs">
+                    <button class="tab-btn active" onclick="switchTab('auto')">Auto-Generate</button>
+                    <button class="tab-btn" onclick="switchTab('manual')">Manual Editor</button>
+                    <button class="tab-btn" onclick="switchTab('import')">Import/Export</button>
+                </div>
+
+                <!-- AUTO GENERATE TAB -->
+                <div id="tab-auto" class="tab-content active">
+                    <div class="form-group">
+                        <label for="auto-pieces">Enemy Pieces (Max 16):</label>
+                        <input type="number" id="auto-pieces" min="1" max="16" value="16">
+                    </div>
+                    <div class="form-group">
+                        <label for="auto-form">Starting Form:</label>
+                        <select id="auto-form">
+                            <option value="R" selected>Rook (R)</option>
+                            <option value="Q">Queen (Q)</option>
+                            <option value="B">Bishop (B)</option>
+                            <option value="N">Knight (N)</option>
+                            <option value="K">King (K)</option>
+                            <option value="P">Pawn (P)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="auto-powerups">Random Power Ups:</label>
+                        <input type="number" id="auto-powerups" min="0" max="20" value="2">
+                    </div>
+                    <button class="btn btn-green" onclick="startAutoGame()">Generate & Play</button>
+                    <div class="hint-box">
+                        Defaults: Full black set (16 pieces), Rook starting form, 2 power ups. Automatically ensures at least 1 victory is possible!
+                    </div>
+                </div>
+
+                <!-- MANUAL EDITOR TAB -->
+                <div id="tab-manual" class="tab-content">
+                    <label>Select Tool & Click Board to Place:</label>
+                    <div class="manual-tools" id="manual-tools">
+                        <button class="tool-btn active" onclick="setTool('_')">Empty (_)</button>
+                        <button class="tool-btn" onclick="setTool('#R')">Player #R</button>
+                        <button class="tool-btn" onclick="setTool('#Q')">Player #Q</button>
+                        <button class="tool-btn" onclick="setTool('#B')">Player #B</button>
+                        <button class="tool-btn" onclick="setTool('#N')">Player #N</button>
+                        <button class="tool-btn" onclick="setTool('#K')">Player #K</button>
+                        <button class="tool-btn" onclick="setTool('#P')">Player #P</button>
+                        <button class="tool-btn" onclick="setTool('K')">Enemy K</button>
+                        <button class="tool-btn" onclick="setTool('Q')">Enemy Q</button>
+                        <button class="tool-btn" onclick="setTool('R')">Enemy R</button>
+                        <button class="tool-btn" onclick="setTool('B')">Enemy B</button>
+                        <button class="tool-btn" onclick="setTool('N')">Enemy N</button>
+                        <button class="tool-btn" onclick="setTool('P')">Enemy P</button>
+                        <button class="tool-btn" onclick="setTool('^R')">Power ^R</button>
+                        <button class="tool-btn" onclick="setTool('^Q')">Power ^Q</button>
+                        <button class="tool-btn" onclick="setTool('^B')">Power ^B</button>
+                        <button class="tool-btn" onclick="setTool('^N')">Power ^N</button>
+                        <button class="tool-btn" onclick="setTool('^K')">Power ^K</button>
+                        <button class="tool-btn" onclick="setTool('^P')">Power ^P</button>
+                        <button class="tool-btn" onclick="setTool('!')">Power !</button>
+                        <button class="tool-btn" onclick="setTool('@')">Power @</button>
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn btn-blue" onclick="clearBoardForEdit()">Clear Board</button>
+                        <button class="btn btn-green" onclick="validateAndPlayManual()">Validate & Play</button>
+                    </div>
+                    <div class="hint-box" id="manual-msg">
+                        In edit mode, click tiles to place selected item. You can also cover powerups with enemy pieces by clicking them sequentially.
+                    </div>
+                </div>
+
+                <!-- IMPORT / EXPORT TAB -->
+                <div id="tab-import" class="tab-content">
+                    <div class="form-group">
+                        <label for="io-text">64-Tile Notation Data:</label>
+                        <textarea id="io-text" placeholder="A1: #R, A2: P, ... H8: _"></textarea>
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn" onclick="exportBoard()">Export Setup</button>
+                        <button class="btn btn-green" onclick="importBoard()">Import & Play</button>
+                    </div>
+                    <div class="hint-box">
+                        Format: comma-separated list of tiles A1 to H8. Multiple objects on one tile are comma-separated inside (e.g. D4: B,^R).
+                    </div>
+                </div>
+            </div>
+
+            <!-- MOVE LOG PANEL -->
+            <div class="panel log-panel">
+                <label style="margin-bottom: 8px; display: block;">Move Log:</label>
+                <div class="log-list" id="log-list">
+                    <div style="color: var(--text-muted); text-align: center; padding: 20px;">No moves yet.</div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- SELECTION / PROMOTION MODAL -->
+    <div class="modal-overlay" id="choice-modal">
+        <div class="modal">
+            <h2 id="modal-title">Choose Form</h2>
+            <p id="modal-desc">Select a piece form to shift into:</p>
+            <div class="modal-options" id="modal-options"></div>
+        </div>
+    </div>
+
+    <!-- GAME END MODAL -->
+    <div class="modal-overlay" id="end-modal">
+        <div class="modal">
+            <h2 id="end-title" class="victory-text">Victory!</h2>
+            <p id="end-desc">You captured the enemy King in 5 moves.</p>
+            <div style="max-height: 150px; overflow-y: auto; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 6px; font-family: monospace; text-align: left; margin-bottom: 20px; font-size: 13px;" id="end-log"></div>
+            <div class="btn-row">
+                <button class="btn" onclick="restartSameGame()">Play Again</button>
+                <button class="btn btn-green" onclick="closeEndModal(); startAutoGame();">New Game</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- GAME STATE ---
+        const FILES = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+        const RANKS = ['1', '2', '3', '4', '5', '6', '7', '8'];
+        const ALL_FORMS = ['P', 'B', 'N', 'R', 'Q', 'K'];
+
+        let boardData = []; // 8x8 array. Each element is { player: form|null, enemy: form|null, powerup: str|null }
+        let playerPos = { c: 0, r: 0 };
+        let playerForm = 'R';
+        let moveCount = 0;
+        let shieldCount = 0;
+        let gameActive = false;
+        let editMode = false;
+        let currentTool = '_';
+        let moveLog = [];
+        let validMoves = [];
+        let attackedSquares = [];
+        let initialSetupCopy = null; // for restart
+
+        // --- DOM ELEMENTS ---
+        const boardEl = document.getElementById('board');
+        const rankLabelsEl = document.getElementById('rank-labels');
+        const fileLabelsEl = document.getElementById('file-labels');
+        const statFormEl = document.getElementById('stat-form');
+        const statMovesEl = document.getElementById('stat-moves');
+        const statShieldsEl = document.getElementById('stat-shields');
+        const toggleCheckEl = document.getElementById('toggle-check');
+        const logListEl = document.getElementById('log-list');
+
+        // --- INITIALIZATION ---
+        function initUI() {
+            // Build Rank and File labels
+            rankLabelsEl.innerHTML = RANKS.slice().reverse().map(r => `<div>${r}</div>`).join('');
+            fileLabelsEl.innerHTML = FILES.map(f => `<div>${f}</div>`).join('');
+
+            toggleCheckEl.addEventListener('change', renderBoard);
+
+            startAutoGame();
+        }
+
+        function createEmptyBoardData() {
+            let data = [];
+            for (let r = 0; r < 8; r++) {
+                let row = [];
+                for (let c = 0; c < 8; c++) {
+                    row.push({ player: null, enemy: null, powerup: null });
+                }
+                data.push(row);
+            }
+            return data;
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+            event.target.classList.add('active');
+            document.getElementById(`tab-${tab}`).classList.add('active');
+
+            if (tab === 'manual') {
+                editMode = true;
+                gameActive = false;
+                document.getElementById('board-msg').innerText = "Edit Mode Active: Click tiles to place pieces or power ups.";
+                renderBoard();
+            } else {
+                editMode = false;
+            }
+        }
+
+        function setTool(tool) {
+            currentTool = tool;
+            document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+
+        // --- AUTO-GENERATE & BFS SOLVER ---
+        function startAutoGame() {
+            editMode = false;
+            let piecesCount = parseInt(document.getElementById('auto-pieces').value) || 16;
+            let startForm = document.getElementById('auto-form').value || 'R';
+            let powerupsCount = parseInt(document.getElementById('auto-powerups').value) || 2;
+
+            let attempts = 0;
+            let success = false;
+
+            while (attempts < 500 && !success) {
+                attempts++;
+                boardData = createEmptyBoardData();
+
+                // All coordinates pool
+                let allCoords = [];
+                for (let r = 0; r < 8; r++) {
+                    for (let c = 0; c < 8; c++) {
+                        allCoords.push({ c, r });
+                    }
+                }
+                shuffleArray(allCoords);
+
+                // 1. Place Player in bottom 3 ranks (0, 1, 2)
+                let pIndex = allCoords.findIndex(pos => pos.r <= 2);
+                if (pIndex === -1) pIndex = 0;
+                let pPos = allCoords.splice(pIndex, 1)[0];
+                boardData[pPos.r][pPos.c].player = startForm;
+                playerPos = { c: pPos.c, r: pPos.r };
+                playerForm = startForm;
+
+                // 2. Place Black King in top 3 ranks (5, 6, 7)
+                let kIndex = allCoords.findIndex(pos => pos.r >= 5);
+                if (kIndex === -1) kIndex = 0;
+                let kPos = allCoords.splice(kIndex, 1)[0];
+                boardData[kPos.r][kPos.c].enemy = 'K';
+
+                // 3. Pool of enemy pieces for standard full black set
+                let enemyPool = ['Q', 'R', 'R', 'B', 'B', 'N', 'N', 'P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'];
+                shuffleArray(enemyPool);
+
+                let actualEnemies = enemyPool.slice(0, Math.max(0, Math.min(15, piecesCount - 1)));
+                for (let ef of actualEnemies) {
+                    if (allCoords.length === 0) break;
+                    let pos = allCoords.pop();
+                    boardData[pos.r][pos.c].enemy = ef;
+                }
+
+                // 4. Place Power Ups
+                let powerupTypes = ['^P', '^B', '^N', '^R', '^Q', '^K', '!', '@'];
+                for (let i = 0; i < powerupsCount; i++) {
+                    if (allCoords.length === 0) break;
+                    let pu = powerupTypes[Math.floor(Math.random() * powerupTypes.length)];
+                    // Powerups can be on empty tiles OR enemy tiles! Let's randomly pick any tile except player
+                    let rC = Math.floor(Math.random() * 8);
+                    let rR = Math.floor(Math.random() * 8);
+                    if (rC === playerPos.c && rR === playerPos.r) continue;
+                    boardData[rR][rC].powerup = pu;
+                }
+
+                // Check Solvable
+                if (isBoardSolvable()) {
+                    success = true;
+                }
+            }
+
+            if (!success) {
+                alert("Could not generate a solvable board with these constraints after 500 tries. Using fallback solvable setup!");
+                setupFallbackBoard(startForm);
+            }
+
+            startGameFromCurrentData();
+        }
+
+        function setupFallbackBoard(form) {
+            boardData = createEmptyBoardData();
+            boardData[0][0].player = form;
+            playerPos = { c: 0, r: 0 };
+            playerForm = form;
+            boardData[7][7].enemy = 'K';
+            boardData[4][4].enemy = 'P';
+            boardData[3][3].powerup = '!';
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        function isBoardSolvable() {
+            // BFS solver to find if player can reach enemy King without dying
+            // State: { c, r, form, shields }
+            let q = [{ c: playerPos.c, r: playerPos.r, form: playerForm, shields: 0 }];
+            let visited = new Set();
+
+            while (q.length > 0) {
+                let curr = q.shift();
+                let stateKey = `${curr.c},${curr.r},${curr.form},${curr.shields}`;
+                if (visited.has(stateKey)) continue;
+                visited.add(stateKey);
+
+                if (visited.size > 3000) return true; // Complex enough, assume likely solvable or give player chance
+
+                // Get valid moves for this state
+                let moves = getValidMovesForState(curr.c, curr.r, curr.form, boardData);
+                for (let m of moves) {
+                    let destTile = boardData[m.r][m.c];
+                    if (destTile.enemy === 'K') {
+                        return true; // King reachable!
+                    }
+
+                    // Simulate step
+                    let nextForm = curr.form;
+                    let nextShields = curr.shields;
+
+                    if (destTile.powerup === '@') nextShields++;
+                    else if (destTile.powerup === '!') nextForm = 'Q'; // assume best form Q
+                    else if (destTile.powerup && destTile.powerup.startsWith('^')) {
+                        let target = destTile.powerup[1];
+                        nextForm = (curr.form === target) ? 'Q' : target;
+                    }
+
+                    // Check if promotion
+                    if (curr.form === 'P' && m.r === 7) nextForm = 'Q';
+
+                    // Check check
+                    let attacked = isSquareAttacked(m.c, m.r, curr.c, curr.r, boardData);
+                    if (attacked) {
+                        if (nextShields > 0) nextShields--;
+                        else continue; // Dead end
+                    }
+
+                    q.push({ c: m.c, r: m.r, form: nextForm, shields: nextShields });
+                }
+            }
+            return false;
+        }
+
+        function getValidMovesForState(c, r, form, bData) {
+            let moves = [];
+            const addMove = (nc, nr) => {
+                if (nc >= 0 && nc < 8 && nr >= 0 && nr < 8) {
+                    moves.push({ c: nc, r: nr });
+                }
+            };
+
+            if (form === 'P') {
+                // Forward 1
+                if (r + 1 < 8 && !bData[r + 1][c].enemy) {
+                    addMove(c, r + 1);
+                    // Forward 2 from rank 2 (r == 1)
+                    if (r === 1 && !bData[r + 2][c].enemy && !bData[r + 1][c].powerup) {
+                        addMove(c, r + 2);
+                    }
+                }
+                // Captures
+                if (r + 1 < 8) {
+                    if (c - 1 >= 0 && bData[r + 1][c - 1].enemy) addMove(c - 1, r + 1);
+                    if (c + 1 < 8 && bData[r + 1][c + 1].enemy) addMove(c + 1, r + 1);
+                }
+            } else if (form === 'N') {
+                const jumps = [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]];
+                for (let [dc, dr] of jumps) {
+                    let nc = c + dc, nr = r + dr;
+                    if (nc >= 0 && nc < 8 && nr >= 0 && nr < 8) addMove(nc, nr);
+                }
+            } else if (form === 'K') {
+                for (let dc = -1; dc <= 1; dc++) {
+                    for (let dr = -1; dr <= 1; dr++) {
+                        if (dc === 0 && dr === 0) continue;
+                        let nc = c + dc, nr = r + dr;
+                        if (nc >= 0 && nc < 8 && nr >= 0 && nr < 8) addMove(nc, nr);
+                    }
+                }
+            } else {
+                // Sliding (R, B, Q)
+                let dirs = [];
+                if (form === 'R' || form === 'Q') dirs.push([-1,0],[1,0],[0,-1],[0,1]);
+                if (form === 'B' || form === 'Q') dirs.push([-1,-1],[-1,1],[1,-1],[1,1]);
+
+                for (let [dc, dr] of dirs) {
+                    let nc = c + dc, nr = r + dr;
+                    while (nc >= 0 && nc < 8 && nr >= 0 && nr < 8) {
+                        addMove(nc, nr);
+                        if (bData[nr][nc].enemy || bData[nr][nc].powerup) break;
+                        nc += dc; nr += dr;
+                    }
+                }
+            }
+            return moves;
+        }
+
+        // --- CHECK & ATTACK CALCULATION ---
+        function isSquareAttacked(targetC, targetR, ignorePlayerC, ignorePlayerR, bData) {
+            // Check if any enemy piece attacks (targetC, targetR)
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    let enemy = bData[r][c].enemy;
+                    if (!enemy) continue;
+
+                    if (enemy === 'P') {
+                        // Black pawn attacks diagonally downwards (r - 1)
+                        if (r - 1 === targetR && (c - 1 === targetC || c + 1 === targetC)) return true;
+                    } else if (enemy === 'N') {
+                        let dc = Math.abs(c - targetC), dr = Math.abs(r - targetR);
+                        if ((dc === 1 && dr === 2) || (dc === 2 && dr === 1)) return true;
+                    } else if (enemy === 'K') {
+                        if (Math.abs(c - targetC) <= 1 && Math.abs(r - targetR) <= 1 && !(c === targetC && r === targetR)) return true;
+                    } else {
+                        // Sliding enemies (R, B, Q)
+                        let dirs = [];
+                        if (enemy === 'R' || enemy === 'Q') dirs.push([-1,0],[1,0],[0,-1],[0,1]);
+                        if (enemy === 'B' || enemy === 'Q') dirs.push([-1,-1],[-1,1],[1,-1],[1,1]);
+
+                        for (let [dc, dr] of dirs) {
+                            let nc = c + dc, nr = r + dr;
+                            while (nc >= 0 && nc < 8 && nr >= 0 && nr < 8) {
+                                if (nc === targetC && nr === targetR) return true;
+                                // Ray blocked by piece or powerup (ignore old player pos if they moved)
+                                if ((nc !== ignorePlayerC || nr !== ignorePlayerR) && 
+                                    (bData[nr][nc].enemy || bData[nr][nc].powerup || (bData[nr][nc].player && !(nc === ignorePlayerC && nr === ignorePlayerR)))) {
+                                    break;
+                                }
+                                nc += dc; nr += dr;
+                            }
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
+        function calculateAttackedSquares() {
+            attackedSquares = [];
+            for (let r = 0; r < 8; r++) {
+                let row = [];
+                for (let c = 0; c < 8; c++) {
+                    row.push(isSquareAttacked(c, r, playerPos.c, playerPos.r, boardData));
+                }
+                attackedSquares.push(row);
+            }
+        }
+
+        // --- GAMEPLAY CONTROL ---
+        function startGameFromCurrentData() {
+            gameActive = true;
+            editMode = false;
+            moveCount = 0;
+            shieldCount = 0;
+            moveLog = [];
+            updateStats();
+            renderLog();
+
+            // Locate player
+            let pFound = false;
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    if (boardData[r][c].player) {
+                        playerPos = { c, r };
+                        playerForm = boardData[r][c].player;
+                        pFound = true;
+                        break;
+                    }
+                }
+                if (pFound) break;
+            }
+
+            initialSetupCopy = JSON.parse(JSON.stringify(boardData));
+            document.getElementById('board-msg').innerText = "Click on highlighted squares to move. Reach and take the Black King (K)!";
+            renderBoard();
+        }
+
+        function restartSameGame() {
+            closeEndModal();
+            if (initialSetupCopy) {
+                boardData = JSON.parse(JSON.stringify(initialSetupCopy));
+                startGameFromCurrentData();
+            } else {
+                startAutoGame();
+            }
+        }
+
+        function updateStats() {
+            statFormEl.innerText = playerForm;
+            statMovesEl.innerText = moveCount;
+            statShieldsEl.innerText = `@ ${shieldCount}`;
+        }
+
+        function renderBoard() {
+            boardEl.innerHTML = '';
+            calculateAttackedSquares();
+            if (gameActive) {
+                validMoves = getValidMovesForState(playerPos.c, playerPos.r, playerForm, boardData);
+            } else {
+                validMoves = [];
+            }
+
+            let showCheck = toggleCheckEl.checked;
+
+            // Render rank by rank from 8 down to 1 (index 7 down to 0)
+            for (let r = 7; r >= 0; r--) {
+                for (let c = 0; c < 8; c++) {
+                    let tileData = boardData[r][c];
+                    let isLight = (r + c) % 2 === 1;
+                    let tileEl = document.createElement('div');
+                    tileEl.className = `tile ${isLight ? 'light' : 'dark'}`;
+
+                    // Check highlights
+                    if (showCheck && attackedSquares[r][c]) {
+                        tileEl.classList.add('in-check');
+                    }
+
+                    // Valid move highlights
+                    let isValidMove = validMoves.some(m => m.c === c && m.r === r);
+                    if (isValidMove) {
+                        tileEl.classList.add('valid-move');
+                        if (tileData.enemy || tileData.powerup) {
+                            tileEl.classList.add('has-piece');
+                        }
+                    }
+
+                    // Tile Content
+                    let contentEl = document.createElement('div');
+                    contentEl.className = 'tile-content';
+
+                    if (tileData.player) {
+                        let pEl = document.createElement('span');
+                        pEl.className = 'piece-player';
+                        pEl.innerText = tileData.player;
+                        contentEl.appendChild(pEl);
+                    }
+
+                    if (tileData.enemy) {
+                        let eEl = document.createElement('span');
+                        eEl.className = 'piece-enemy';
+                        if (tileData.powerup) eEl.classList.add('piece-purple');
+                        eEl.innerText = tileData.enemy;
+                        contentEl.appendChild(eEl);
+                    }
+
+                    if (tileData.powerup) {
+                        let puEl = document.createElement('span');
+                        puEl.className = 'powerup';
+                        puEl.innerText = tileData.powerup;
+                        contentEl.appendChild(puEl);
+                    }
+
+                    tileEl.appendChild(contentEl);
+
+                    // Click handler
+                    tileEl.addEventListener('click', () => onTileClick(c, r));
+                    boardEl.appendChild(tileEl);
+                }
+            }
+        }
+
+        function onTileClick(c, r) {
+            if (editMode) {
+                applyManualTool(c, r);
+                return;
+            }
+
+            if (!gameActive) return;
+
+            let isValid = validMoves.some(m => m.c === c && m.r === r);
+            if (!isValid) return;
+
+            executeMove(c, r);
+        }
+
+        function executeMove(destC, destR) {
+            let targetTile = boardData[destR][destC];
+            let capturedEnemy = targetTile.enemy;
+            let capturedPowerup = targetTile.powerup;
+
+            // Logging notation format
+            let moveNotation = '';
+            let pieceSym = (playerForm === 'P') ? '' : playerForm;
+            let capSym = capturedEnemy ? (playerForm === 'P' ? `${FILES[playerPos.c].toLowerCase()}x` : 'x') : '';
+            let destSym = `${FILES[destC].toLowerCase()}${destR + 1}`;
+            moveNotation = `${pieceSym}${capSym}${destSym}`;
+
+            // Execute grid movement
+            boardData[playerPos.r][playerPos.c].player = null;
+            boardData[destR][destC].player = playerForm;
+            boardData[destR][destC].enemy = null;
+            boardData[destR][destC].powerup = null;
+
+            let oldPos = { ...playerPos };
+            playerPos = { c: destC, r: destR };
+            moveCount++;
+
+            // 1. Check Victory (Captured enemy King)
+            if (capturedEnemy === 'K') {
+                moveNotation += '#';
+                logMove(moveNotation);
+                updateStats();
+                renderBoard();
+                endGame(true, "Victory!", `You captured the enemy King in ${moveCount} moves!`);
+                return;
+            }
+
+            // 2. Check Promotion
+            let isPromoting = (playerForm === 'P' && destR === 7);
+
+            // 3. Resolve Powerup effects & Promotion
+            let formChangeNote = '';
+
+            const finalizeMoveAfterEffects = (extraNote = '') => {
+                let totalNote = formChangeNote + extraNote;
+                // Check enemy attack on new position
+                calculateAttackedSquares();
+                let inCheck = attackedSquares[destR][destC];
+                if (inCheck) {
+                    if (shieldCount > 0) {
+                        shieldCount--;
+                        moveNotation += '+ (Shield Used!)';
+                        totalNote += ' [@ shield consumed]';
+                    } else {
+                        moveNotation += '+';
+                        logMove(moveNotation + totalNote);
+                        updateStats();
+                        renderBoard();
+                        endGame(false, "Defeat!", `You moved into Check at ${destSym} without any survive shields!`);
+                        return;
+                    }
+                }
+
+                logMove(moveNotation + totalNote);
+                updateStats();
+                renderBoard();
+            };
+
+            if (capturedPowerup === '@') {
+                shieldCount++;
+                formChangeNote += ' [++@ Shield]';
+            }
+
+            if (isPromoting) {
+                showModal("Pawn Promotion!", "Your pawn reached the top rank! Select a new form:", ['Q', 'R', 'B', 'N'], (selectedForm) => {
+                    boardData[destR][destC].player = selectedForm;
+                    playerForm = selectedForm;
+                    formChangeNote += ` (=${selectedForm})`;
+                    handlePowerupShift(capturedPowerup, finalizeMoveAfterEffects);
+                });
+            } else {
+                handlePowerupShift(capturedPowerup, finalizeMoveAfterEffects);
+            }
+        }
+
+        function handlePowerupShift(powerup, callback) {
+            if (!powerup || powerup === '@') {
+                callback('');
+                return;
+            }
+
+            if (powerup === '!') {
+                showModal("Any-Form Power Up (!)", "You collected '!'. Shift into ANY form of your choice:", ALL_FORMS, (selected) => {
+                    boardData[playerPos.r][playerPos.c].player = selected;
+                    let oldF = playerForm;
+                    playerForm = selected;
+                    callback(` (${oldF}->${selected})`);
+                });
+            } else if (powerup.startsWith('^')) {
+                let target = powerup[1];
+                if (playerForm === target) {
+                    let otherForms = ALL_FORMS.filter(f => f !== target);
+                    showModal("Force Shift Power Up", `You hit '${powerup}' while already in form ${target}! Choose ANY OTHER form:`, otherForms, (selected) => {
+                        boardData[playerPos.r][playerPos.c].player = selected;
+                        playerForm = selected;
+                        callback(` (${target}->${selected})`);
+                    });
+                } else {
+                    let oldF = playerForm;
+                    boardData[playerPos.r][playerPos.c].player = target;
+                    playerForm = target;
+                    callback(` (${oldF}->${target})`);
+                }
+            } else {
+                callback('');
+            }
+        }
+
+        function showModal(title, desc, options, onSelect) {
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-desc').innerText = desc;
+            let optsEl = document.getElementById('modal-options');
+            optsEl.innerHTML = '';
+
+            options.forEach(opt => {
+                let btn = document.createElement('button');
+                btn.className = 'modal-btn';
+                btn.innerText = opt;
+                btn.onclick = () => {
+                    document.getElementById('choice-modal').classList.remove('active');
+                    onSelect(opt);
+                };
+                optsEl.appendChild(btn);
+            });
+
+            document.getElementById('choice-modal').classList.add('active');
+        }
+
+        function endGame(isVictory, title, desc) {
+            gameActive = false;
+            let endTitle = document.getElementById('end-title');
+            endTitle.innerText = title;
+            endTitle.className = isVictory ? 'victory-text' : 'defeat-text';
+            document.getElementById('end-desc').innerText = desc;
+
+            let logHtml = moveLog.map((m, idx) => `<div><b>${idx + 1}.</b> ${m}</div>`).join('');
+            document.getElementById('end-log').innerHTML = logHtml || "No moves made.";
+
+            document.getElementById('end-modal').classList.add('active');
+        }
+
+        function closeEndModal() {
+            document.getElementById('end-modal').classList.remove('active');
+        }
+
+        function logMove(moveText) {
+            moveLog.push(moveText);
+            renderLog();
+        }
+
+        function renderLog() {
+            if (moveLog.length === 0) {
+                logListEl.innerHTML = '<div style="color: var(--text-muted); text-align: center; padding: 20px;">No moves yet.</div>';
+                return;
+            }
+            logListEl.innerHTML = moveLog.map((m, idx) => `
+                <div class="log-entry">
+                    <span class="log-num">${idx + 1}.</span>
+                    <span>${m}</span>
+                </div>
+            `).join('');
+            logListEl.scrollTop = logListEl.scrollHeight;
+        }
+
+        // --- MANUAL EDITOR ---
+        function applyManualTool(c, r) {
+            let tile = boardData[r][c];
+
+            if (currentTool === '_') {
+                tile.player = null;
+                tile.enemy = null;
+                tile.powerup = null;
+            } else if (currentTool.startsWith('#')) {
+                // Remove player from anywhere else
+                for (let rr = 0; rr < 8; rr++) {
+                    for (let cc = 0; cc < 8; cc++) {
+                        boardData[rr][cc].player = null;
+                    }
+                }
+                tile.player = currentTool[1];
+                playerPos = { c, r };
+                playerForm = currentTool[1];
+            } else if (currentTool.startsWith('^') || currentTool === '!' || currentTool === '@') {
+                tile.powerup = currentTool;
+            } else {
+                // Enemy piece
+                if (currentTool === 'K') {
+                    // Ensure only 1 black king
+                    for (let rr = 0; rr < 8; rr++) {
+                        for (let cc = 0; cc < 8; cc++) {
+                            if (boardData[rr][cc].enemy === 'K') boardData[rr][cc].enemy = null;
+                        }
+                    }
+                }
+                tile.enemy = currentTool;
+            }
+            renderBoard();
+        }
+
+        function clearBoardForEdit() {
+            boardData = createEmptyBoardData();
+            renderBoard();
+        }
+
+        function validateAndPlayManual() {
+            // Check player exists
+            let pCount = 0;
+            let kCount = 0;
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    if (boardData[r][c].player) {
+                        pCount++;
+                        playerPos = { c, r };
+                        playerForm = boardData[r][c].player;
+                    }
+                    if (boardData[r][c].enemy === 'K') kCount++;
+                }
+            }
+
+            if (pCount === 0 || kCount === 0) {
+                alert("Invalid Board! You must place exactly one Player (#P/B/N/R/Q/K) and one Enemy King (K).");
+                return;
+            }
+
+            // Confirm victory is possible
+            if (!isBoardSolvable()) {
+                alert("No victory is possible with this configuration! As required, trying another random configuration...");
+                startAutoGame();
+                return;
+            }
+
+            startGameFromCurrentData();
+        }
+
+        // --- IMPORT & EXPORT ---
+        function exportBoard() {
+            let tiles = [];
+            for (let r = 7; r >= 0; r--) {
+                for (let c = 0; c < 8; c++) {
+                    let coord = `${FILES[c]}${r + 1}`;
+                    let items = [];
+                    let td = boardData[r][c];
+                    if (td.player) items.push(`#${td.player}`);
+                    if (td.enemy) items.push(td.enemy);
+                    if (td.powerup) items.push(td.powerup);
+                    let val = items.length > 0 ? items.join(',') : '_';
+                    tiles.push(`${coord}: ${val}`);
+                }
+            }
+            document.getElementById('io-text').value = tiles.join(', ');
+            alert("Board exported to text box!");
+        }
+
+        function importBoard() {
+            let text = document.getElementById('io-text').value.trim();
+            if (!text) {
+                alert("Please paste notation data first.");
+                return;
+            }
+
+            let newData = createEmptyBoardData();
+            let entries = text.split(',').map(e => e.trim());
+
+            // Because entries can be split by comma when items have comma inside (e.g., A1: B,^R), we should parse by tile coordinates regex!
+            let tileRegex = /([A-H][1-8]):\s*([^A-H1-8:]+)(?=(?:,\s*[A-H][1-8]:|$))/gi;
+            let match;
+            let found = 0;
+
+            while ((match = tileRegex.exec(text)) !== null) {
+                found++;
+                let coord = match[1].toUpperCase();
+                let valStr = match[2].trim().replace(/,+$/, ''); // remove trailing comma if any
+                let c = FILES.indexOf(coord[0]);
+                let r = parseInt(coord[1]) - 1;
+
+                if (valStr !== '_' && valStr !== '') {
+                    let parts = valStr.split(',').map(p => p.trim());
+                    for (let p of parts) {
+                        if (p.startsWith('#')) {
+                            newData[r][c].player = p[1];
+                        } else if (p.startsWith('^') || p === '!' || p === '@') {
+                            newData[r][c].powerup = p;
+                        } else if (ALL_FORMS.includes(p)) {
+                            newData[r][c].enemy = p;
+                        }
+                    }
+                }
+            }
+
+            if (found < 10) {
+                alert("Could not parse valid 64-tile notation. Ensure format is like A1: #R, A2: P, ... E8: K");
+                return;
+            }
+
+            boardData = newData;
+            startGameFromCurrentData();
+            alert("Board imported successfully!");
+        }
+
+        // Initialize on load
+        window.addEventListener('DOMContentLoaded', initUI);
+    </script>
+</body>
+</html>
