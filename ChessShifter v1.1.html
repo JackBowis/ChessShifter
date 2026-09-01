@@ -160,6 +160,8 @@
         }
 
         .rank-labels {
+            grid-row: 1;
+            grid-column: 1;
             display: grid;
             grid-template-rows: repeat(8, 60px);
             align-items: center;
@@ -169,6 +171,7 @@
         }
 
         .file-labels {
+            grid-row: 2;
             grid-column: 2;
             display: grid;
             grid-template-columns: repeat(8, 60px);
@@ -179,6 +182,8 @@
         }
 
         .board {
+            grid-row: 1;
+            grid-column: 2;
             width: 480px;
             height: 480px;
             display: grid;
@@ -668,14 +673,19 @@
                 <div id="tab-import" class="tab-content">
                     <div class="form-group">
                         <label for="io-text">64-Tile Notation Data:</label>
-                        <textarea id="io-text" placeholder="A1: #R, A2: P, ... H8: _"></textarea>
-                    </div>
-                    <div class="btn-row">
-                        <button class="btn" onclick="exportBoard()">Export Setup</button>
-                        <button class="btn btn-green" onclick="importBoard()">Import & Play</button>
-                    </div>
-                    <div class="hint-box">
-                        Format: comma-separated list of tiles A1 to H8. Multiple objects on one tile are comma-separated inside (e.g. D4: B,^R).
+                         <textarea id="io-text" placeholder="A1: #R, A2: P, ... H8: _"></textarea>
+                     </div>
+                     <div class="btn-row">
+                         <button class="btn" onclick="exportBoard()">Export to Text Box</button>
+                         <button class="btn btn-green" onclick="importBoard()">Import from Text Box</button>
+                     </div>
+                     <div class="btn-row">
+                         <button class="btn btn-blue" onclick="exportFile()">Export to File</button>
+                         <button class="btn btn-purple" onclick="document.getElementById('io-file').click()">Import from File</button>
+                         <input type="file" id="io-file" accept=".txt" style="display: none;" onchange="importFile(event)">
+                     </div>
+                     <div class="hint-box">
+                         Format: comma-separated list of tiles A1 to H8. Multiple objects on one tile are comma-separated inside (e.g. D4: B,^R).
                     </div>
                 </div>
             </div>
@@ -1399,7 +1409,7 @@
         }
 
         // --- IMPORT & EXPORT ---
-        function exportBoard() {
+        function getBoardNotationText() {
             let tiles = [];
             for (let r = 7; r >= 0; r--) {
                 for (let c = 0; c < 8; c++) {
@@ -1410,27 +1420,36 @@
                     if (td.enemy) items.push(td.enemy);
                     if (td.powerup) items.push(td.powerup);
                     let val = items.length > 0 ? items.join(',') : '_';
-                    tiles.push(`${coord}: ${val}`);
-                }
-            }
-            document.getElementById('io-text').value = tiles.join(', ');
-            alert("Board exported to text box!");
-        }
-
-        function importBoard() {
-            let text = document.getElementById('io-text').value.trim();
-            if (!text) {
-                alert("Please paste notation data first.");
-                return;
-            }
-
-            let newData = createEmptyBoardData();
-            let entries = text.split(',').map(e => e.trim());
-
-            // Because entries can be split by comma when items have comma inside (e.g., A1: B,^R), we should parse by tile coordinates regex!
-            let tileRegex = /([A-H][1-8]):\s*([^A-H1-8:]+)(?=(?:,\s*[A-H][1-8]:|$))/gi;
-            let match;
-            let found = 0;
+                                         tiles.push(`${coord}: ${val}`);
+                 }
+             }
+             return tiles.join(', ');
+         }
+ 
+         function exportBoard() {
+             document.getElementById('io-text').value = getBoardNotationText();
+             alert("Board exported to text box!");
+         }
+         function exportFile() {
+             let text = getBoardNotationText();
+             let blob = new Blob([text], { type: 'text/plain' });
+             let a = document.createElement('a');
+             a.href = URL.createObjectURL(blob);
+             a.download = 'chess_shifter_board.txt';
+             a.click();
+             URL.revokeObjectURL(a.href);
+             alert("Board exported to file!");
+         }
+ 
+         function importBoardString(text) {
+             if (!text || !text.trim()) {
+                 alert("Please paste notation data first.");
+                 return false;
+             }
+             let newData = createEmptyBoardData();
+             let tileRegex = /([A-H][1-8]):\s*(.*?)(?=(?:[\s,]+)[A-H][1-8]:|$)/gi;
+             let match;
+             let found = 0;
 
             while ((match = tileRegex.exec(text)) !== null) {
                 found++;
@@ -1454,16 +1473,33 @@
             }
 
             if (found < 10) {
-                alert("Could not parse valid 64-tile notation. Ensure format is like A1: #R, A2: P, ... E8: K");
-                return;
-            }
-
-            boardData = newData;
-            startGameFromCurrentData();
-            alert("Board imported successfully!");
-        }
-
-        // Initialize on load
+                 alert("Could not parse valid 64-tile notation. Ensure format is like A1: #R, A2: P, ... E8: K");
+                 return false;
+             }
+             boardData = newData;
+             startGameFromCurrentData();
+             alert("Board imported successfully!");
+             return true;
+         }
+ 
+         function importBoard() {
+             let text = document.getElementById('io-text').value.trim();
+             importBoardString(text);
+         }
+ 
+         function importFile(event) {
+             let file = event.target.files && event.target.files[0];
+             if (!file) return;
+             let reader = new FileReader();
+             reader.onload = function(e) {
+                 let text = e.target.result;
+                 document.getElementById('io-text').value = text;
+                 importBoardString(text);
+             };
+             reader.readAsText(file);
+             event.target.value = '';
+         }
+         // Initialize on load
         window.addEventListener('DOMContentLoaded', initUI);
     </script>
 </body>
