@@ -466,6 +466,82 @@
 
         .btn-row .btn { flex: 1; }
 
+        .range-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .range-col {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .piece-selector-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 6px;
+        }
+
+        .piece-select-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 6px 2px;
+            background: rgba(0,0,0,0.2);
+            border: 1px solid var(--bg-panel-border);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: bold;
+            user-select: none;
+            transition: 0.2s;
+            gap: 4px;
+        }
+
+        .piece-select-item:hover {
+            background: rgba(255,255,255,0.08);
+        }
+
+        .piece-select-item.selected {
+            border-color: var(--accent-blue);
+            background: rgba(58, 134, 255, 0.25);
+            color: #fff;
+        }
+
+        .piece-select-item img {
+            width: 28px;
+            height: 28px;
+            object-fit: contain;
+            pointer-events: none;
+        }
+
+        .level-display-row {
+            display: flex;
+            justify-content: space-between;
+            background: rgba(0,0,0,0.25);
+            border: 1px solid var(--bg-panel-border);
+            border-radius: 6px;
+            padding: 6px 10px;
+        }
+
+        .level-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            color: var(--text-main);
+        }
+
+        .level-item img {
+            width: 20px;
+            height: 20px;
+            object-fit: contain;
+        }
+
         .manual-tools {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -663,6 +739,10 @@
 
         .victory-text { color: var(--accent-green); }
         .defeat-text { color: var(--accent-red); }
+        .perfect-victory-text {
+            color: var(--accent-gold);
+            text-shadow: 0 0 12px rgba(255, 215, 0, 0.8), 0 0 4px #fff;
+        }
 
         /* Defeat Board Preview */
         .defeat-board-container {
@@ -770,7 +850,7 @@
                 <div class="toggle-switch"></div>
                 <span>Show Check Highlights</span>
             </label>
-            </div>
+        </div>
     </header>
 
     <main>
@@ -796,32 +876,132 @@
 
                 <!-- AUTO GENERATE TAB -->
                 <div id="tab-auto" class="tab-content active">
+                    <!-- 4. Challenge Level range (1-5) with black piece icons -->
                     <div class="form-group">
-                        <label for="auto-pieces">Enemy Pieces (Max 16):</label>
-                        <input type="number" id="auto-pieces" min="1" max="16" value="16">
+                        <label>Challenge Level Range (1-5):</label>
+                        <div class="level-display-row">
+                            <div class="level-item"><img id="level-icon-1" alt="P"> 1 (P)</div>
+                            <div class="level-item"><img id="level-icon-2" alt="N"> 2 (N)</div>
+                            <div class="level-item"><img id="level-icon-3" alt="B"> 3 (B)</div>
+                            <div class="level-item"><img id="level-icon-4" alt="R"> 4 (R)</div>
+                            <div class="level-item"><img id="level-icon-5" alt="Q"> 5 (Q)</div>
+                        </div>
+                        <div class="range-row" style="margin-top: 4px;">
+                            <div class="range-col">
+                                <label for="auto-level-min" style="font-size: 12px;">Min Level:</label>
+                                <select id="auto-level-min">
+                                    <option value="1" selected>1 - Pawn</option>
+                                    <option value="2">2 - Knight</option>
+                                    <option value="3">3 - Bishop</option>
+                                    <option value="4">4 - Rook</option>
+                                    <option value="5">5 - Queen</option>
+                                </select>
+                            </div>
+                            <div class="range-col">
+                                <label for="auto-level-max" style="font-size: 12px;">Max Level:</label>
+                                <select id="auto-level-max">
+                                    <option value="1">1 - Pawn</option>
+                                    <option value="2">2 - Knight</option>
+                                    <option value="3">3 - Bishop</option>
+                                    <option value="4">4 - Rook</option>
+                                    <option value="5" selected>5 - Queen</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
+
+                    <!-- 5. TotalEnemyStrength range (20-60) -->
                     <div class="form-group">
-                        <label for="auto-form">Starting Form:</label>
-                        <select id="auto-form">
-                            <option value="R" selected>Rook (R)</option>
-                            <option value="Q">Queen (Q)</option>
-                            <option value="B">Bishop (B)</option>
-                            <option value="N">Knight (N)</option>
-                            <option value="K">King (K)</option>
-                            <option value="P">Pawn (P)</option>
-                        </select>
+                        <label>Total Enemy Strength Range (20 - 60):</label>
+                        <div class="range-row">
+                            <div class="range-col">
+                                <label for="auto-strength-min" style="font-size: 12px;">Min Strength:</label>
+                                <input type="number" id="auto-strength-min" min="20" max="60" value="20">
+                            </div>
+                            <div class="range-col">
+                                <label for="auto-strength-max" style="font-size: 12px;">Max Strength:</label>
+                                <input type="number" id="auto-strength-max" min="20" max="60" value="40">
+                            </div>
+                        </div>
+                        <div style="font-size: 11px; color: var(--text-muted);">
+                            Pawn = 1, Knight = 3, Bishop = 3, Rook = 5, Queen = 9 (King = 0)
+                        </div>
                     </div>
+
+                    <!-- 3. Range of possible starting pieces -->
                     <div class="form-group">
-                        <label for="auto-shields">Shields:</label>
-                        <input type="number" id="auto-shields" min="0" max="20" value="1">
+                        <label>Possible Starting Pieces:</label>
+                        <div class="piece-selector-grid" id="starting-piece-selector">
+                            <div class="piece-select-item" data-form="P" onclick="toggleStartPiece(this)"><img id="sp-img-P" alt="P"><span>Pawn</span></div>
+                            <div class="piece-select-item" data-form="N" onclick="toggleStartPiece(this)"><img id="sp-img-N" alt="N"><span>Knight</span></div>
+                            <div class="piece-select-item" data-form="B" onclick="toggleStartPiece(this)"><img id="sp-img-B" alt="B"><span>Bishop</span></div>
+                            <div class="piece-select-item selected" data-form="R" onclick="toggleStartPiece(this)"><img id="sp-img-R" alt="R"><span>Rook</span></div>
+                            <div class="piece-select-item" data-form="Q" onclick="toggleStartPiece(this)"><img id="sp-img-Q" alt="Q"><span>Queen</span></div>
+                            <div class="piece-select-item" data-form="K" onclick="toggleStartPiece(this)"><img id="sp-img-K" alt="K"><span>King</span></div>
+                        </div>
                     </div>
+
+                    <!-- 1. Preferred starting Shift Tokens range (0-16) -->
                     <div class="form-group">
-                        <label for="auto-change">Change Tokens:</label>
-                        <input type="number" id="auto-change" min="0" max="20" value="3">
+                        <label>Starting Shift Tokens Range (0 - 16):</label>
+                        <div class="range-row">
+                            <div class="range-col">
+                                <label for="auto-start-tokens-min" style="font-size: 12px;">Min Shift Tokens:</label>
+                                <input type="number" id="auto-start-tokens-min" min="0" max="16" value="0">
+                            </div>
+                            <div class="range-col">
+                                <label for="auto-start-tokens-max" style="font-size: 12px;">Max Shift Tokens:</label>
+                                <input type="number" id="auto-start-tokens-max" min="0" max="16" value="3">
+                            </div>
+                        </div>
                     </div>
+
+                    <!-- 2. Preferred starting Shields range (0-2) -->
+                    <div class="form-group">
+                        <label>Starting Shields Range (0 - 2):</label>
+                        <div class="range-row">
+                            <div class="range-col">
+                                <label for="auto-start-shields-min" style="font-size: 12px;">Min Shields:</label>
+                                <input type="number" id="auto-start-shields-min" min="0" max="2" value="0">
+                            </div>
+                            <div class="range-col">
+                                <label for="auto-start-shields-max" style="font-size: 12px;">Max Shields:</label>
+                                <input type="number" id="auto-start-shields-max" min="0" max="2" value="1">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 6. Board Power Ups range (0-3 each) -->
+                    <div class="form-group">
+                        <label>Board Power Ups Placed (0 - 3 each):</label>
+                        <div class="range-row">
+                            <div class="range-col">
+                                <label for="auto-board-tokens-min" style="font-size: 12px;">Min Change (C):</label>
+                                <input type="number" id="auto-board-tokens-min" min="0" max="3" value="0">
+                            </div>
+                            <div class="range-col">
+                                <label for="auto-board-tokens-max" style="font-size: 12px;">Max Change (C):</label>
+                                <input type="number" id="auto-board-tokens-max" min="0" max="3" value="2">
+                            </div>
+                        </div>
+                        <div class="range-row" style="margin-top: 4px;">
+                            <div class="range-col">
+                                <label for="auto-board-shields-min" style="font-size: 12px;">Min Shields (S):</label>
+                                <input type="number" id="auto-board-shields-min" min="0" max="3" value="0">
+                            </div>
+                            <div class="range-col">
+                                <label for="auto-board-shields-max" style="font-size: 12px;">Max Shields (S):</label>
+                                <input type="number" id="auto-board-shields-max" min="0" max="3" value="2">
+                            </div>
+                        </div>
+                        <div style="font-size: 11px; color: var(--text-muted);">
+                            Double Shields (SS) and Double Change (CC) count as 2.
+                        </div>
+                    </div>
+
                     <button class="btn btn-green" onclick="startAutoGame()">Generate & Play</button>
                     <div class="hint-box">
-                        Defaults: Full black set (16 pieces), Rook starting form, 2 power ups. Automatically ensures at least 1 victory is possible!
+                        Generates 5 winning puzzles, ranks them by Challenge Score, and launches the puzzle matching your Challenge Level.
                     </div>
                 </div>
 
@@ -847,12 +1027,28 @@
                         <button class="tool-btn" onclick="setTool('C')">Change (C)</button>
                         <button class="tool-btn" onclick="setTool('CC')">Gold Change (CC)</button>
                     </div>
+
+                    <!-- Starting Conditions for Manual Editor -->
+                    <div class="form-group" style="margin-top: 10px;">
+                        <label>Starting Conditions:</label>
+                        <div class="range-row">
+                            <div class="range-col">
+                                <label for="manual-shields" style="font-size: 12px;">Starting Shields (0-10):</label>
+                                <input type="number" id="manual-shields" min="0" max="10" value="0">
+                            </div>
+                            <div class="range-col">
+                                <label for="manual-tokens" style="font-size: 12px;">Starting Shift Tokens (0-16):</label>
+                                <input type="number" id="manual-tokens" min="0" max="16" value="0">
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="btn-row">
                         <button class="btn btn-blue" onclick="clearBoardForEdit()">Clear Board</button>
                         <button class="btn btn-green" onclick="validateAndPlayManual()">Validate & Play</button>
                     </div>
                     <div class="hint-box" id="manual-msg">
-                        In edit mode, click tiles to place selected item. You can also cover powerups with enemy pieces by clicking them sequentially.
+                        In edit mode, click tiles to place selected item. You can configure starting shields and tokens, then click Validate & Play.
                     </div>
                 </div>
 
@@ -860,19 +1056,19 @@
                 <div id="tab-import" class="tab-content">
                     <div class="form-group">
                         <label for="io-text">64-Tile Notation Data:</label>
-                         <textarea id="io-text" placeholder="A1: #R, A2: P, ... H8: _"></textarea>
-                     </div>
-                     <div class="btn-row">
-                         <button class="btn" onclick="exportBoard()">Export to Text Box</button>
-                         <button class="btn btn-green" onclick="importBoard()">Import from Text Box</button>
-                     </div>
-                     <div class="btn-row">
-                         <button class="btn btn-blue" onclick="exportFile()">Export to File</button>
-                         <button class="btn btn-purple" onclick="document.getElementById('io-file').click()">Import from File</button>
-                         <input type="file" id="io-file" accept=".txt" style="display: none;" onchange="importFile(event)">
-                     </div>
-                     <div class="hint-box">
-                         Format: comma-separated list of tiles A1 to H8. Multiple objects on one tile are comma-separated inside (e.g. D4: B,C or E5: SS,N).
+                        <textarea id="io-text" placeholder="A1: #R, A2: P, ... H8: _, ZZS: 0, ZZC: 0"></textarea>
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn" onclick="exportBoard()">Export to Text Box</button>
+                        <button class="btn btn-green" onclick="importBoard()">Import from Text Box</button>
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn btn-blue" onclick="exportFile()">Export to File</button>
+                        <button class="btn btn-purple" onclick="document.getElementById('io-file').click()">Import from File</button>
+                        <input type="file" id="io-file" accept=".txt" style="display: none;" onchange="importFile(event)">
+                    </div>
+                    <div class="hint-box">
+                        Format: comma-separated list of tiles A1 to H8 and optional ZZS / ZZC lines for starting shields and Change Tokens (e.g. A1: #R, A2: P, ... H8: _, ZZS: 1, ZZC: 2).
                     </div>
                 </div>
 
@@ -912,6 +1108,9 @@
         <div class="modal">
             <h2 id="end-title" class="victory-text">Victory!</h2>
             <p id="end-desc">You captured the enemy King in 5 moves.</p>
+            <div id="challenge-score-badge" style="background: rgba(0,0,0,0.3); border: 1px solid var(--bg-panel-border); border-radius: 6px; padding: 8px 12px; margin-bottom: 15px; font-weight: bold; color: var(--accent-gold); font-size: 14px;">
+                Challenge Score: 0
+            </div>
             <div id="defeat-board-preview-wrapper" style="display: none;">
                 <div style="font-weight: bold; margin-bottom: 4px; color: var(--text-muted); font-size: 13px;">Original Starting Board:</div>
                 <div class="defeat-board-container" id="defeat-board-container"></div>
@@ -930,7 +1129,7 @@
 
     <script>
         // --- BASE64 PIECE & POWERUP ICONS ---
-        const ICONS = {
+const ICONS = {
             b_R: "data:image/png;base64,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",
             b_Q: "data:image/png;base64,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",
             b_K: "data:image/png;base64,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",
@@ -959,6 +1158,10 @@
         let moveCount = 0;
         let shieldCount = 0;
         let changeTokenCount = 0;
+        let startingShieldCount = 0;
+        let startingChangeTokenCount = 0;
+        let currentPuzzleSolution = null;
+        let currentChallengeScore = 0;
         let gameActive = false;
         let editMode = false;
         let currentTool = '_';
@@ -987,9 +1190,31 @@
             rankLabelsEl.innerHTML = RANKS.slice().reverse().map(r => `<div>${r}</div>`).join('');
             fileLabelsEl.innerHTML = FILES.map(f => `<div>${f}</div>`).join('');
 
+            // Set images for piece selection icons
+            const spMap = { 'P': 'w_P', 'N': 'w_N', 'B': 'w_B', 'R': 'w_R', 'Q': 'w_Q', 'K': 'w_K' };
+            for (let form in spMap) {
+                let imgEl = document.getElementById(`sp-img-${form}`);
+                if (imgEl && ICONS[spMap[form]]) imgEl.src = ICONS[spMap[form]];
+            }
+
+            // Set images for challenge level header icons
+            const lvlMap = { 1: 'b_P', 2: 'b_N', 3: 'b_B', 4: 'b_R', 5: 'b_Q' };
+            for (let lvl in lvlMap) {
+                let imgEl = document.getElementById(`level-icon-${lvl}`);
+                if (imgEl && ICONS[lvlMap[lvl]]) imgEl.src = ICONS[lvlMap[lvl]];
+            }
+
             toggleCheckEl.addEventListener('change', renderBoard);
 
             startAutoGame();
+        }
+
+        function toggleStartPiece(el) {
+            el.classList.toggle('selected');
+            let selected = document.querySelectorAll('#starting-piece-selector .piece-select-item.selected');
+            if (selected.length === 0) {
+                el.classList.add('selected'); // Keep at least one selected
+            }
         }
 
         function createEmptyBoardData() {
@@ -1017,7 +1242,7 @@
             if (tab === 'manual') {
                 editMode = true;
                 gameActive = false;
-                document.getElementById('board-msg').innerText = "Edit Mode Active: Click tiles to place pieces or power ups.";
+                document.getElementById('board-msg').innerText = "Edit Mode Active: Click tiles to place pieces or power ups. Configure starting shields and tokens.";
                 renderBoard();
             } else {
                 editMode = false;
@@ -1039,21 +1264,103 @@
             currentGameSource = 'generated';
             generatedSaved = false;
 
-            let piecesCount = parseInt(document.getElementById('auto-pieces').value) || 16;
-            let startForm = document.getElementById('auto-form').value || 'R';
-            let shieldsCount = parseInt(document.getElementById('auto-shields').value);
-            if (isNaN(shieldsCount)) shieldsCount = 1;
-            let changeTokensCount = parseInt(document.getElementById('auto-change').value);
-            if (isNaN(changeTokensCount)) changeTokensCount = 3;
+            // 1. Read input ranges
+            let levelMin = parseInt(document.getElementById('auto-level-min').value) || 1;
+            let levelMax = parseInt(document.getElementById('auto-level-max').value) || 5;
+            if (levelMin > levelMax) [levelMin, levelMax] = [levelMax, levelMin];
 
+            let strengthMin = parseInt(document.getElementById('auto-strength-min').value) || 20;
+            let strengthMax = parseInt(document.getElementById('auto-strength-max').value) || 40;
+            if (strengthMin > strengthMax) [strengthMin, strengthMax] = [strengthMax, strengthMin];
+            strengthMin = Math.max(20, Math.min(60, strengthMin));
+            strengthMax = Math.max(20, Math.min(60, strengthMax));
+
+            // Starting pieces selection
+            let selectedStartingPieces = [];
+            document.querySelectorAll('#starting-piece-selector .piece-select-item.selected').forEach(el => {
+                selectedStartingPieces.push(el.getAttribute('data-form'));
+            });
+            if (selectedStartingPieces.length === 0) selectedStartingPieces = ['R'];
+
+            // Starting Shift Tokens range (0 - 16)
+            let startTokensMin = parseInt(document.getElementById('auto-start-tokens-min').value) || 0;
+            let startTokensMax = parseInt(document.getElementById('auto-start-tokens-max').value) || 0;
+            if (startTokensMin > startTokensMax) [startTokensMin, startTokensMax] = [startTokensMax, startTokensMin];
+            startTokensMin = Math.max(0, Math.min(16, startTokensMin));
+            startTokensMax = Math.max(0, Math.min(16, startTokensMax));
+
+            // Starting Shields range (0 - 2)
+            let startShieldsMin = parseInt(document.getElementById('auto-start-shields-min').value) || 0;
+            let startShieldsMax = parseInt(document.getElementById('auto-start-shields-max').value) || 0;
+            if (startShieldsMin > startShieldsMax) [startShieldsMin, startShieldsMax] = [startShieldsMax, startShieldsMin];
+            startShieldsMin = Math.max(0, Math.min(2, startShieldsMin));
+            startShieldsMax = Math.max(0, Math.min(2, startShieldsMax));
+
+            // Board Power Ups Range (0 - 3 each)
+            let boardTokensMin = parseInt(document.getElementById('auto-board-tokens-min').value) || 0;
+            let boardTokensMax = parseInt(document.getElementById('auto-board-tokens-max').value) || 0;
+            if (boardTokensMin > boardTokensMax) [boardTokensMin, boardTokensMax] = [boardTokensMax, boardTokensMin];
+            boardTokensMin = Math.max(0, Math.min(3, boardTokensMin));
+            boardTokensMax = Math.max(0, Math.min(3, boardTokensMax));
+
+            let boardShieldsMin = parseInt(document.getElementById('auto-board-shields-min').value) || 0;
+            let boardShieldsMax = parseInt(document.getElementById('auto-board-shields-max').value) || 0;
+            if (boardShieldsMin > boardShieldsMax) [boardShieldsMin, boardShieldsMax] = [boardShieldsMax, boardShieldsMin];
+            boardShieldsMin = Math.max(0, Math.min(3, boardShieldsMin));
+            boardShieldsMax = Math.max(0, Math.min(3, boardShieldsMax));
+
+            let winningPuzzles = [];
             let attempts = 0;
-            let success = false;
+            const maxAttempts = 1500;
 
-            while (attempts < 500 && !success) {
+            const pieceValues = { 'P': 1, 'B': 3, 'N': 3, 'R': 5, 'Q': 9 };
+            const pieceTypes = ['P', 'B', 'N', 'R', 'Q'];
+
+            while (winningPuzzles.length < 5 && attempts < maxAttempts) {
                 attempts++;
-                boardData = createEmptyBoardData();
 
-                // All coordinates pool
+                let sTokens = startTokensMin + Math.floor(Math.random() * (startTokensMax - startTokensMin + 1));
+                let sShields = startShieldsMin + Math.floor(Math.random() * (startShieldsMax - startShieldsMin + 1));
+                let sForm = selectedStartingPieces[Math.floor(Math.random() * selectedStartingPieces.length)];
+
+                let targetStrength = strengthMin + Math.floor(Math.random() * (strengthMax - strengthMin + 1));
+
+                let curStrength = 0;
+                let enemyPieces = [];
+                while (curStrength < targetStrength && enemyPieces.length < 50) {
+                    let remaining = targetStrength - curStrength;
+                    let possible = pieceTypes.filter(pt => pieceValues[pt] <= remaining);
+                    if (possible.length === 0) break;
+                    let chosenPt = possible[Math.floor(Math.random() * possible.length)];
+                    enemyPieces.push(chosenPt);
+                    curStrength += pieceValues[chosenPt];
+                }
+
+                let targetBoardTokens = boardTokensMin + Math.floor(Math.random() * (boardTokensMax - boardTokensMin + 1));
+                let targetBoardShields = boardShieldsMin + Math.floor(Math.random() * (boardShieldsMax - boardShieldsMin + 1));
+
+                let powerupsToPlace = [];
+                if (targetBoardShields === 1) {
+                    powerupsToPlace.push('S');
+                } else if (targetBoardShields === 2) {
+                    if (Math.random() < 0.5) powerupsToPlace.push('SS');
+                    else powerupsToPlace.push('S', 'S');
+                } else if (targetBoardShields === 3) {
+                    if (Math.random() < 0.5) powerupsToPlace.push('SS', 'S');
+                    else powerupsToPlace.push('S', 'S', 'S');
+                }
+
+                if (targetBoardTokens === 1) {
+                    powerupsToPlace.push('C');
+                } else if (targetBoardTokens === 2) {
+                    if (Math.random() < 0.5) powerupsToPlace.push('CC');
+                    else powerupsToPlace.push('C', 'C');
+                } else if (targetBoardTokens === 3) {
+                    if (Math.random() < 0.5) powerupsToPlace.push('CC', 'C');
+                    else powerupsToPlace.push('C', 'C', 'C');
+                }
+
+                let testBoard = createEmptyBoardData();
                 let allCoords = [];
                 for (let r = 0; r < 8; r++) {
                     for (let c = 0; c < 8; c++) {
@@ -1062,67 +1369,93 @@
                 }
                 shuffleArray(allCoords);
 
-                // 1. Place Player in bottom 3 ranks (0, 1, 2)
+                // Player in bottom 3 ranks
                 let pIndex = allCoords.findIndex(pos => pos.r <= 2);
                 if (pIndex === -1) pIndex = 0;
                 let pPos = allCoords.splice(pIndex, 1)[0];
-                boardData[pPos.r][pPos.c].player = startForm;
-                playerPos = { c: pPos.c, r: pPos.r };
-                playerForm = startForm;
+                testBoard[pPos.r][pPos.c].player = sForm;
 
-                // 2. Place Black King in top 3 ranks (5, 6, 7)
+                // Enemy King in top 3 ranks
                 let kIndex = allCoords.findIndex(pos => pos.r >= 5);
                 if (kIndex === -1) kIndex = 0;
                 let kPos = allCoords.splice(kIndex, 1)[0];
-                boardData[kPos.r][kPos.c].enemy = 'K';
+                testBoard[kPos.r][kPos.c].enemy = 'K';
 
-                // 3. Pool of enemy pieces for standard full black set
-                let enemyPool = ['Q', 'R', 'R', 'B', 'B', 'N', 'N', 'P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'];
-                shuffleArray(enemyPool);
-
-                let actualEnemies = enemyPool.slice(0, Math.max(0, Math.min(15, piecesCount - 1)));
-                for (let ef of actualEnemies) {
+                // Place enemy pieces
+                for (let ep of enemyPieces) {
                     if (allCoords.length === 0) break;
                     let pos = allCoords.pop();
-                    boardData[pos.r][pos.c].enemy = ef;
+                    testBoard[pos.r][pos.c].enemy = ep;
                 }
 
-                // 4. Place Power Ups (Shields: S, Change Tokens: C)
-                let powerupsToPlace = [];
-                for (let i = 0; i < shieldsCount; i++) powerupsToPlace.push('S');
-                for (let i = 0; i < changeTokensCount; i++) powerupsToPlace.push('C');
-                shuffleArray(powerupsToPlace);
-
+                // Place powerups
                 for (let pu of powerupsToPlace) {
                     let rC = Math.floor(Math.random() * 8);
                     let rR = Math.floor(Math.random() * 8);
-                    if (rC === playerPos.c && rR === playerPos.r) continue;
-                    boardData[rR][rC].powerup = pu;
+                    if (rC === pPos.c && rR === pPos.r) continue;
+                    testBoard[rR][rC].powerup = pu;
                 }
 
-                // Check Solvable
-                if (isBoardSolvable()) {
-                    success = true;
+                // Test solution
+                let sol = findWinningSolution(testBoard, sShields, sTokens);
+                if (!sol) continue;
+
+                // Condition 4: If Challenge Level of 3 or higher has been selected, treat any puzzles with winning solutions that involve no Shifts as being invalid puzzles.
+                if (levelMax >= 3 && sol.shifts === 0) {
+                    continue;
                 }
+
+                winningPuzzles.push({
+                    boardData: testBoard,
+                    startShields: sShields,
+                    startTokens: sTokens,
+                    startForm: sForm,
+                    solution: sol,
+                    challengeScore: sol.challengeScore
+                });
             }
 
-            if (!success) {
-                alert("Could not generate a solvable board with these constraints after 500 tries. Using fallback solvable setup!");
-                setupFallbackBoard(startForm);
+            if (winningPuzzles.length === 0) {
+                alert("Could not generate a solvable board with these constraints. Using fallback solvable setup!");
+                let fbBoard = createEmptyBoardData();
+                fbBoard[0][0].player = selectedStartingPieces[0] || 'R';
+                fbBoard[7][7].enemy = 'K';
+                fbBoard[4][4].enemy = 'P';
+                fbBoard[3][3].powerup = 'C';
+                let sol = findWinningSolution(fbBoard, 0, 1);
+                winningPuzzles.push({
+                    boardData: fbBoard,
+                    startShields: 0,
+                    startTokens: 1,
+                    startForm: fbBoard[0][0].player,
+                    solution: sol,
+                    challengeScore: sol ? sol.challengeScore : 1
+                });
             }
+
+            // Sort generated winning puzzles by Challenge Score (ascending)
+            winningPuzzles.sort((a, b) => a.challengeScore - b.challengeScore);
+
+            // Select puzzle corresponding to Challenge Level range
+            let selectedLevel = levelMin + Math.floor(Math.random() * (levelMax - levelMin + 1));
+            let puzzleIndex = Math.min(winningPuzzles.length - 1, Math.max(0, Math.round(((selectedLevel - 1) / 4) * (winningPuzzles.length - 1))));
+            if (winningPuzzles.length === 5) {
+                puzzleIndex = selectedLevel - 1;
+            }
+            let chosenPuzzle = winningPuzzles[puzzleIndex];
+
+            boardData = chosenPuzzle.boardData;
+            startingShieldCount = chosenPuzzle.startShields;
+            startingChangeTokenCount = chosenPuzzle.startTokens;
+            currentPuzzleSolution = chosenPuzzle.solution;
+            currentChallengeScore = chosenPuzzle.challengeScore;
+
+            let mShields = document.getElementById('manual-shields');
+            if (mShields) mShields.value = startingShieldCount;
+            let mTokens = document.getElementById('manual-tokens');
+            if (mTokens) mTokens.value = startingChangeTokenCount;
 
             startGameFromCurrentData();
-        }
-
-        function setupFallbackBoard(form) {
-            boardData = createEmptyBoardData();
-            boardData[0][0].player = form;
-            playerPos = { c: 0, r: 0 };
-            playerForm = form;
-            boardData[7][7].enemy = 'K';
-            boardData[4][4].enemy = 'P';
-            boardData[3][3].powerup = 'C';
-            boardData[2][2].powerup = 'S';
         }
 
         function shuffleArray(array) {
@@ -1133,7 +1466,7 @@
         }
 
         // --- SOLVER ENGINE ---
-        function findWinningSolution(bData) {
+        function findWinningSolution(bData, startShields = 0, startTokens = 0) {
             let startP = null;
             let startForm = 'R';
             let kingPos = null;
@@ -1283,13 +1616,24 @@
             }
 
             // BFS
-            let startState = { c: startP.c, r: startP.r, form: startForm, shields: 0, changeTokens: 0, mask: 0, path: [] };
+            let startState = {
+                c: startP.c,
+                r: startP.r,
+                form: startForm,
+                shields: startShields,
+                changeTokens: startTokens,
+                mask: 0,
+                path: [],
+                piecesTaken: 0,
+                shifts: 0,
+                shieldsUsed: 0
+            };
             let queue = [startState];
             let visited = new Set();
 
             while (queue.length > 0) {
                 let curr = queue.shift();
-                let stateKey = `${curr.c},${curr.r},${curr.form},${Math.min(curr.shields, 3)},${Math.min(curr.changeTokens, 3)},${curr.mask}`;
+                let stateKey = `${curr.c},${curr.r},${curr.form},${Math.min(curr.shields, 10)},${Math.min(curr.changeTokens, 16)},${curr.mask}`;
                 if (visited.has(stateKey)) continue;
                 visited.add(stateKey);
 
@@ -1300,7 +1644,18 @@
                     if (kingPos && m.c === kingPos.c && m.r === kingPos.r) {
                         let pieceSym = (curr.form === 'P') ? `${FILES[curr.c].toLowerCase()}x` : `${curr.form}x`;
                         let destSym = `${FILES[m.c].toLowerCase()}${m.r + 1}#`;
-                        return [...curr.path, `${pieceSym}${destSym}`];
+                        let finalPath = [...curr.path, `${pieceSym}${destSym}`];
+                        let piecesTaken = curr.piecesTaken + 1;
+                        let shifts = curr.shifts;
+                        let shieldsUsed = curr.shieldsUsed;
+                        let challengeScore = piecesTaken + (3 * shifts) - (2 * shieldsUsed);
+                        return {
+                            path: finalPath,
+                            piecesTaken: piecesTaken,
+                            shifts: shifts,
+                            shieldsUsed: shieldsUsed,
+                            challengeScore: challengeScore
+                        };
                     }
 
                     let nextForm = curr.form;
@@ -1309,6 +1664,8 @@
                     let nextMask = curr.mask;
                     let capturedEnemy = null;
                     let capturedPu = null;
+                    let nextPiecesTaken = curr.piecesTaken;
+                    let nextShifts = curr.shifts;
 
                     let key = `${m.c},${m.r}`;
                     if (key in itemMap) {
@@ -1323,9 +1680,13 @@
                             else if (capturedPu === 'C') nextTokens += 1;
                             else if (capturedPu === 'CC') nextTokens += 2;
 
-                            if (capturedEnemy && nextTokens > 0) {
-                                nextTokens -= 1;
-                                nextForm = capturedEnemy;
+                            if (capturedEnemy) {
+                                nextPiecesTaken += 1;
+                                if (nextTokens > 0) {
+                                    nextTokens -= 1;
+                                    nextForm = capturedEnemy;
+                                    nextShifts += 1;
+                                }
                             }
                         }
                     }
@@ -1335,11 +1696,13 @@
                     for (let pf of promotions) {
                         let attacked = isAttackedWithMask(m.c, m.r, curr.c, curr.r, nextMask);
                         let nShields = nextShields;
+                        let nShieldsUsed = curr.shieldsUsed;
                         let shieldUsed = false;
 
                         if (attacked) {
                             if (nShields > 0) {
                                 nShields -= 1;
+                                nShieldsUsed += 1;
                                 shieldUsed = true;
                             } else {
                                 continue;
@@ -1365,7 +1728,10 @@
                             shields: nShields,
                             changeTokens: nextTokens,
                             mask: nextMask,
-                            path: [...curr.path, moveNotation]
+                            path: [...curr.path, moveNotation],
+                            piecesTaken: nextPiecesTaken,
+                            shifts: nextShifts,
+                            shieldsUsed: nShieldsUsed
                         });
                     }
                 }
@@ -1373,8 +1739,8 @@
             return null;
         }
 
-        function isBoardSolvable() {
-            let sol = findWinningSolution(boardData);
+        function isBoardSolvable(bData = null, sShields = 0, sTokens = 0) {
+            let sol = findWinningSolution(bData || boardData, sShields, sTokens);
             return sol !== null;
         }
 
@@ -1432,16 +1798,14 @@
 
         // --- CHECK & ATTACK CALCULATION ---
         function isSquareAttacked(targetC, targetR, ignorePlayerC, ignorePlayerR, bData) {
-            // Check if any enemy piece attacks (targetC, targetR)
             for (let r = 0; r < 8; r++) {
                 for (let c = 0; c < 8; c++) {
                     let enemy = bData[r][c].enemy;
                     if (!enemy) continue;
                     
-                    if(targetC == c && targetR == r){
+                    if (targetC === c && targetR === r) {
                         // Ignore this case - pieces don't cover their own tile
                     } else if (enemy === 'P') {
-                        // Black pawn attacks diagonally downwards (r - 1)
                         if (r - 1 === targetR && (c - 1 === targetC || c + 1 === targetC)) {
                             return true;
                         }
@@ -1502,8 +1866,8 @@
             gameActive = true;
             editMode = false;
             moveCount = 0;
-            shieldCount = 0;
-            changeTokenCount = 0;
+            shieldCount = startingShieldCount;
+            changeTokenCount = startingChangeTokenCount;
             moveLog = [];
             updateStats();
             renderLog();
@@ -1523,6 +1887,12 @@
             }
 
             initialSetupCopy = JSON.parse(JSON.stringify(boardData));
+
+            if (!currentPuzzleSolution) {
+                currentPuzzleSolution = findWinningSolution(boardData, startingShieldCount, startingChangeTokenCount);
+                currentChallengeScore = currentPuzzleSolution ? currentPuzzleSolution.challengeScore : 0;
+            }
+
             document.getElementById('board-msg').innerText = "Click on highlighted squares to move. Reach and take the Black King (K)!";
             renderBoard();
         }
@@ -1576,7 +1946,6 @@
                 puImg.alt = tileData.powerup;
 
                 if (isGold) {
-                    // Feature 1: Surround gold Shields / Change Tokens with a gold ring
                     let ringWrap = document.createElement('div');
                     ringWrap.className = 'ring-wrapper gold-ring';
                     ringWrap.appendChild(puImg);
@@ -1608,12 +1977,10 @@
                     let tileEl = document.createElement('div');
                     tileEl.className = `tile ${isLight ? 'light' : 'dark'}`;
 
-                    // Check highlights
                     if (showCheck && attackedSquares[r][c]) {
                         tileEl.classList.add('in-check');
                     }
 
-                    // Valid move highlights
                     let isValidMove = validMoves.some(m => m.c === c && m.r === r);
                     if (isValidMove) {
                         tileEl.classList.add('valid-move');
@@ -1622,10 +1989,8 @@
                         }
                     }
 
-                    // Tile Content
                     tileEl.appendChild(createTileContentEl(tileData, false));
 
-                    // Click handler
                     tileEl.addEventListener('click', () => onTileClick(c, r));
                     boardEl.appendChild(tileEl);
                 }
@@ -1651,20 +2016,17 @@
             let capturedEnemy = targetTile.enemy;
             let capturedPowerup = targetTile.powerup;
 
-            // Feature 4: Save generated map to Map History on first move
             if (moveCount === 0 && currentGameSource === 'generated' && !generatedSaved) {
                 saveMapToHistory(getBoardNotationText(initialSetupCopy), 'Generated');
                 generatedSaved = true;
             }
 
-            // Logging notation format
             let moveNotation = '';
             let pieceSym = (playerForm === 'P') ? '' : playerForm;
             let capSym = capturedEnemy ? (playerForm === 'P' ? `${FILES[playerPos.c].toLowerCase()}x` : 'x') : '';
             let destSym = `${FILES[destC].toLowerCase()}${destR + 1}`;
             moveNotation = `${pieceSym}${capSym}${destSym}`;
 
-            // Execute grid movement
             boardData[playerPos.r][playerPos.c].player = null;
             boardData[destR][destC].enemy = null;
             boardData[destR][destC].powerup = null;
@@ -1717,7 +2079,6 @@
                 let totalNote = formChangeNote + extraNote;
                 boardData[destR][destC].player = playerForm;
 
-                // Check enemy attack on new position
                 calculateAttackedSquares();
                 let inCheck = attackedSquares[destR][destC];
                 if (inCheck) {
@@ -1773,9 +2134,34 @@
         function endGame(isVictory, title, desc) {
             gameActive = false;
             let endTitle = document.getElementById('end-title');
-            endTitle.innerText = title;
-            endTitle.className = isVictory ? 'victory-text' : 'defeat-text';
+
+            // "If a player wins a game with a route that is as short or shorter than the calculated solution, make the Victory screen show gold Perfect Victory text."
+            if (isVictory) {
+                let optimalLength = currentPuzzleSolution ? currentPuzzleSolution.path.length : null;
+                if (optimalLength !== null && moveCount <= optimalLength) {
+                    endTitle.innerText = "Perfect Victory!";
+                    endTitle.className = "perfect-victory-text";
+                } else {
+                    endTitle.innerText = title || "Victory!";
+                    endTitle.className = "victory-text";
+                }
+            } else {
+                endTitle.innerText = title || "Defeat!";
+                endTitle.className = "defeat-text";
+            }
+
             document.getElementById('end-desc').innerText = desc;
+
+            // Report calculated Challenge Score for the puzzle in the endgame pane
+            let scoreBadge = document.getElementById('challenge-score-badge');
+            if (scoreBadge) {
+                let scoreText = `Challenge Score: ${currentChallengeScore}`;
+                if (currentPuzzleSolution) {
+                    scoreText += ` (Pieces Taken: ${currentPuzzleSolution.piecesTaken}, Shifts: ${currentPuzzleSolution.shifts}, Shields Used: ${currentPuzzleSolution.shieldsUsed})`;
+                }
+                scoreBadge.innerText = scoreText;
+                scoreBadge.style.display = 'block';
+            }
 
             let logHtml = moveLog.map((m, idx) => `<div><b>${idx + 1}.</b> ${m}</div>`).join('');
             document.getElementById('end-log').innerHTML = logHtml || "No moves made.";
@@ -1785,7 +2171,6 @@
             let solBox = document.getElementById('defeat-solution-box');
 
             if (!isVictory) {
-                // Feature 3: In defeat pane, represent original board and option to list winning moves
                 defeatWrapper.style.display = 'block';
                 solBtn.style.display = 'inline-block';
                 solBtn.innerText = 'Show Winning Solution';
@@ -1833,12 +2218,12 @@
             solBox.innerHTML = '<i>Finding winning moves...</i>';
 
             setTimeout(() => {
-                let sol = findWinningSolution(initialSetupCopy);
-                if (!sol || sol.length === 0) {
+                let sol = currentPuzzleSolution || findWinningSolution(initialSetupCopy, startingShieldCount, startingChangeTokenCount);
+                if (!sol || sol.path.length === 0) {
                     solBox.innerHTML = '<div style="color: var(--accent-red);">No winning solution line found for this board.</div>';
                 } else {
-                    let formattedMoves = sol.map((m, idx) => `<div><b>${idx + 1}.</b> ${m}</div>`).join('');
-                    solBox.innerHTML = `<div style="font-weight: bold; margin-bottom: 6px; color: var(--accent-green);">Winning Solution (${sol.length} moves):</div>${formattedMoves}`;
+                    let formattedMoves = sol.path.map((m, idx) => `<div><b>${idx + 1}.</b> ${m}</div>`).join('');
+                    solBox.innerHTML = `<div style="font-weight: bold; margin-bottom: 6px; color: var(--accent-green);">Winning Solution (${sol.path.length} moves, Challenge Score: ${sol.challengeScore}):</div>${formattedMoves}`;
                 }
             }, 10);
         }
@@ -1926,7 +2311,6 @@
                 tile.enemy = null;
                 tile.powerup = null;
             } else if (currentTool.startsWith('#')) {
-                // Remove player from anywhere else
                 for (let rr = 0; rr < 8; rr++) {
                     for (let cc = 0; cc < 8; cc++) {
                         boardData[rr][cc].player = null;
@@ -1940,7 +2324,6 @@
             } else {
                 // Enemy piece
                 if (currentTool === 'K') {
-                    // Ensure only 1 black king
                     for (let rr = 0; rr < 8; rr++) {
                         for (let cc = 0; cc < 8; cc++) {
                             if (boardData[rr][cc].enemy === 'K') boardData[rr][cc].enemy = null;
@@ -1958,7 +2341,6 @@
         }
 
         function validateAndPlayManual() {
-            // Check player exists
             let pCount = 0;
             let kCount = 0;
             for (let r = 0; r < 8; r++) {
@@ -1977,13 +2359,20 @@
                 return;
             }
 
-            // Confirm victory is possible
-            if (!isBoardSolvable()) {
+            let mShields = parseInt(document.getElementById('manual-shields').value) || 0;
+            let mTokens = parseInt(document.getElementById('manual-tokens').value) || 0;
+            startingShieldCount = Math.max(0, mShields);
+            startingChangeTokenCount = Math.max(0, mTokens);
+
+            let sol = findWinningSolution(boardData, startingShieldCount, startingChangeTokenCount);
+            if (!sol) {
                 alert("No victory is possible with this configuration! As required, trying another random configuration...");
                 startAutoGame();
                 return;
             }
 
+            currentPuzzleSolution = sol;
+            currentChallengeScore = sol.challengeScore;
             currentGameSource = 'manual';
             generatedSaved = true;
             startGameFromCurrentData();
@@ -2005,6 +2394,8 @@
                     tiles.push(`${coord}: ${val}`);
                 }
             }
+            tiles.push(`ZZS: ${startingShieldCount}`);
+            tiles.push(`ZZC: ${startingChangeTokenCount}`);
             return tiles.join(', ');
         }
 
@@ -2030,14 +2421,42 @@
                 return false;
             }
             let newData = createEmptyBoardData();
-            let tileRegex = /([A-H][1-8]):\s*(.*?)(?=(?:[\s,]+)[A-H][1-8]:|$)/gi;
+            let parsedShields = 0;
+            let parsedTokens = 0;
+
+            // Parse ZZS and ZZC lines
+            let zzsMatch = text.match(/ZZS:\s*([^\s,]+)/i);
+            if (zzsMatch) {
+                let val = zzsMatch[1].trim();
+                let num = parseInt(val);
+                if (!isNaN(num)) {
+                    parsedShields = num;
+                } else {
+                    if (val.toUpperCase() === 'SS') parsedShields = 2;
+                    else if (val.toUpperCase() === 'S') parsedShields = 1;
+                }
+            }
+
+            let zzcMatch = text.match(/ZZC:\s*([^\s,]+)/i);
+            if (zzcMatch) {
+                let val = zzcMatch[1].trim();
+                let num = parseInt(val);
+                if (!isNaN(num)) {
+                    parsedTokens = num;
+                } else {
+                    if (val.toUpperCase() === 'CC') parsedTokens = 2;
+                    else if (val.toUpperCase() === 'C') parsedTokens = 1;
+                }
+            }
+
+            let tileRegex = /([A-H][1-8]):\s*(.*?)(?=(?:[\s,]+)(?:[A-H][1-8]|ZZS|ZZC):|$)/gi;
             let match;
             let found = 0;
 
             while ((match = tileRegex.exec(text)) !== null) {
                 found++;
                 let coord = match[1].toUpperCase();
-                let valStr = match[2].trim().replace(/,+$/, ''); // remove trailing comma if any
+                let valStr = match[2].trim().replace(/,+$/, '');
                 let c = FILES.indexOf(coord[0]);
                 let r = parseInt(coord[1]) - 1;
 
@@ -2061,6 +2480,15 @@
             }
 
             boardData = newData;
+            startingShieldCount = parsedShields;
+            startingChangeTokenCount = parsedTokens;
+            currentPuzzleSolution = null;
+
+            let mShields = document.getElementById('manual-shields');
+            if (mShields) mShields.value = startingShieldCount;
+            let mTokens = document.getElementById('manual-tokens');
+            if (mTokens) mTokens.value = startingChangeTokenCount;
+
             currentGameSource = 'imported';
             generatedSaved = true;
             startGameFromCurrentData();
@@ -2100,4 +2528,3 @@
     </script>
 </body>
 </html>
-
